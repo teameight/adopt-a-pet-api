@@ -94,11 +94,16 @@ function get_aap_cats() {
 
 	$aap_cats = $aap_cats->pets;
 
+	$aap_cat_ids = array();
+
 	foreach ( $aap_cats as $cat ) {
+
+		$aap_cat_ids[] = $cat->pet_id;
 
 		$name = $cat->pet_name;
 		$order = $cat->order;
 		$pet_id = $cat->pet_id;
+
 
 		// echo '<h1>'.$pet_id.'</h1>';
 
@@ -109,6 +114,11 @@ function get_aap_cats() {
 
 		$cat_info = json_decode( $body );
 		$cat_info = $cat_info->pet;
+		$color = $cat_info->color;
+		$sex = $cat_info->sex;
+		$hair = $cat_info->hair_length;
+		$age = $cat_info->age;
+		$desc = $cat_info->description;
 
 		$existing_cat = get_posts( array(
 				'post_type'		=> 'cats',
@@ -139,7 +149,12 @@ function get_aap_cats() {
 				'meta_input'	=> array(
 						'pet_id'				=> $pet_id,
 						'pet_data'			=> $cat_info,
-						'availability'	=> 'available'
+						'availability'	=> 'available',
+						'color'					=> $color,
+						'sex'						=> $sex,
+						'age'						=> $age,
+						'hair'					=> $hair,
+						'description'		=> $desc
 					)
 			);
 
@@ -147,13 +162,45 @@ function get_aap_cats() {
 
 	}
 
+		$args = array(
+			'posts_per_page' => -1,
+			'post_type'	=> 'cats',
+			'meta_query'	=> array(
+				array(
+					'key'	=> 'availability',
+					'value'	=> 'available',
+					'compare'	=> '='
+				)
+			)
+		);
 
-// Redirect back to settings page
-   // The ?page=github corresponds to the "slug"
-   // set in the fourth parameter of add_submenu_page() above.
-   $redirect_url = get_bloginfo("url") . "/wp-admin/options-general.php?page=adopt-a-pet&status=success";
-   header("Location: ".$redirect_url);
-   exit;
+		$available_cats = get_posts( $args );
+
+		foreach ( $available_cats as $available_cat ) {
+
+			// get the pet id for currently available cats
+			$pet_id = get_post_meta( $available_cat->ID, 'pet_id', true );
+
+			if ( in_array( $pet_id, $aap_cat_ids ) ) {
+				// still available
+			} else {
+				// not available anymore
+				update_post_meta( $available_cat->ID, 'availability', 'unavailable' );
+			}
+		}
+
+		// echo '<pre>';
+		// print_r($aap_cat_ids);
+		// echo '</pre>';
+
+		// echo '<pre>';
+		// print_r($available_cats);
+		// echo '</pre>';
+
+		// Redirect back to settings page
+		$redirect_url = get_bloginfo("url") . "/wp-admin/options-general.php?page=adopt-a-pet&status=success";
+		header("Location: ".$redirect_url);
+		exit;
 
 }
 
