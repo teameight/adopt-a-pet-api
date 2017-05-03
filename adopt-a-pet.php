@@ -133,7 +133,7 @@ function get_aap_cats() {
 		);
 
 		if ( $existing_cat ) :
-			$cat_id = $existing_cat[0]->ID;
+			$cat_id = intval($existing_cat[0]->ID);
 		else :
 			$cat_id = 0;
 		endif;
@@ -159,6 +159,8 @@ function get_aap_cats() {
 			);
 
 		wp_insert_post( $args );
+
+		wp_set_object_terms( $cat_id, 'available', 'availability' );
 
 	}
 
@@ -186,6 +188,7 @@ function get_aap_cats() {
 			} else {
 				// not available anymore
 				update_post_meta( $available_cat->ID, 'availability', 'unavailable' );
+				wp_set_object_terms( $available_cat->ID, 'unavailable', 'availability' );
 			}
 		}
 
